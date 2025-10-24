@@ -36,7 +36,7 @@ char * tryWord(char * plaintext, char * hashFilename)
         if (strcmp(line, hex) == 0)
         {
             fclose(hf);
-            return hex;   // caller frees
+            return hex;
         }
     }
 
@@ -53,8 +53,40 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // keep the starter test
-    char *found = tryWord("hello", "hashes00.txt");
-    printf("%s %s\n", found, "hello");
-    free(found);
+    const char *hash_file = argv[1];
+    const char *dict_file = argv[2];
+
+    FILE *df = fopen(dict_file, "r");
+    if (!df)
+    {
+        perror("open dictionary");
+        exit(1);
+    }
+
+    int cracked = 0;
+    char *word = NULL;
+    size_t cap = 0;
+
+    while (getline(&word, &cap, df) != -1)
+    {
+        trim_eol(word);
+        size_t len = strlen(word);
+        if (len == 0 || len > (size_t)PASS_LEN)
+        {
+            continue;
+        }
+
+        char *found = tryWord(word, (char *)hash_file);
+        if (found != NULL)
+        {
+            printf("%s %s\n", found, word);
+            ++cracked;
+            free(found);
+        }
+    }
+
+    free(word);
+    fclose(df);
+
+    printf("%d hashes cracked!\n", cracked);
 }
